@@ -262,12 +262,6 @@ with gr.Blocks(
         additional_inputs=[provider_dd, model_dd],
         title="Chat",
         description="Ask the agent a question. It will use tools to reason and answer.",
-        examples=[
-            "What is 15 * 7 + 3?",
-            "What is the capital of France?",
-            "Calculate the square root of 144",
-            "What is 2^10?",
-        ],
     )
 
 if __name__ == "__main__":
