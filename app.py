@@ -12,7 +12,7 @@ PROVIDERS = {
     "NVIDIA": {
         "base_url": "https://integrate.api.nvidia.com/v1",
         "api_key_env": "NVIDIA_API_KEY",
-        "models": ["minimax/MiniMax-M3"],
+        "models": ["minimaxai/minimax-m3"],
     },
 }
 

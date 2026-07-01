@@ -19,7 +19,7 @@ Multi-provider ReAct agent with tool use. Switch between **Cerebras** and **NVID
 
 - ReAct reasoning loop (Thought → Action → Observation)
 - Tools: calculator, web search
-- Provider toggle between Cerebras (`gpt-oss-120b`) and NVIDIA (`meta/llama-3.1-405b-instruct`)
+- Provider toggle between Cerebras (`gpt-oss-120b`) and NVIDIA (`minimaxai/minimax-m3`)
 - Step-by-step reasoning visible to user
 
 ## Setting up API Keys
