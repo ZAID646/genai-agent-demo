@@ -16,6 +16,9 @@ PROVIDERS = {
     },
 }
 
+DEFAULT_PROVIDER = "NVIDIA"
+}
+
 TOOLS = []
 
 class BaseTool:
@@ -181,7 +184,7 @@ def run_agent(message: str, provider_name: str, model: str):
 
         try:
             action = extract_json(content)
-        except (json.JSONDecodeError, KeyError) as e:
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
             yield "thinking", f"Raw response:\n```\n{content[:800]}\n```"
             yield "error", f"❌ **Parse Error:** Could not understand model response: {e}"
             return
@@ -189,6 +192,8 @@ def run_agent(message: str, provider_name: str, model: str):
         thought = action.get("thought", "")
         tool_name = action.get("tool")
         tool_input = action.get("tool_input")
+        if not isinstance(tool_input, dict):
+            tool_input = {} if tool_input is None else {"query": str(tool_input)}
 
         if tool_name is None:
             yield "result", thought
@@ -278,13 +283,13 @@ with gr.Blocks(
     with gr.Row():
         provider_dd = gr.Dropdown(
             choices=list(PROVIDERS.keys()),
-            value=list(PROVIDERS.keys())[0],
+            value=DEFAULT_PROVIDER,
             label="AI Provider",
             scale=1,
         )
         model_dd = gr.Dropdown(
-            choices=PROVIDERS[list(PROVIDERS.keys())[0]]["models"],
-            value=PROVIDERS[list(PROVIDERS.keys())[0]]["models"][0],
+            choices=PROVIDERS[DEFAULT_PROVIDER]["models"],
+            value=PROVIDERS[DEFAULT_PROVIDER]["models"][0],
             label="Model",
             scale=1,
         )
