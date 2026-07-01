@@ -43,6 +43,74 @@ class CalculatorTool(BaseTool):
             return f"Error evaluating '{expression}': {e}"
 
 
+class WeatherTool(BaseTool):
+    name = "get_weather"
+    description = "Get the current weather for a city or location. Input: location (string)"
+    parameters = {"location": "city name or location (e.g., 'Tokyo', 'New York', 'London')"}
+
+    def run(self, location: str = "", loc: str = "", query: str = "") -> str:
+        import httpx
+        import json as _json
+        loc = location or loc or query
+        if not loc:
+            return "No location provided."
+
+        try:
+            # Geocode the location
+            geo = httpx.get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={"name": loc, "count": 1, "language": "en", "format": "json"},
+                timeout=10,
+            )
+            geo_data = geo.json()
+            results = geo_data.get("results", [])
+            if not results:
+                return f"Could not find location: {loc}"
+            r = results[0]
+            lat, lon = r["latitude"], r["longitude"]
+            name = f"{r.get('admin1', '')}, {r.get('country', '')}"
+
+            # Fetch weather
+            w = httpx.get(
+                "https://api.open-meteo.com/v1/forecast",
+                params={
+                    "latitude": lat,
+                    "longitude": lon,
+                    "current": ["temperature_2m", "relative_humidity_2m", "apparent_temperature", "weather_code", "wind_speed_10m"],
+                    "timezone": "auto",
+                },
+                timeout=10,
+            )
+            wdata = w.json()
+            current = wdata.get("current", {})
+            temp = current.get("temperature_2m", "N/A")
+            feels_like = current.get("apparent_temperature", "N/A")
+            humidity = current.get("relative_humidity_2m", "N/A")
+            wind = current.get("wind_speed_10m", "N/A")
+            weather_code = current.get("weather_code", 0)
+
+            wmo_codes = {
+                0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+                45: "Foggy", 48: "Depositing rime fog",
+                51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
+                61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+                71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow",
+                80: "Slight rain showers", 81: "Moderate rain showers", 82: "Violent rain showers",
+                95: "Thunderstorm", 96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail",
+            }
+            condition = wmo_codes.get(weather_code, f"Code {weather_code}")
+
+            return (
+                f"Weather in {name}:\n"
+                f"Condition: {condition}\n"
+                f"Temperature: {temp}°C (feels like {feels_like}°C)\n"
+                f"Humidity: {humidity}%\n"
+                f"Wind Speed: {wind} km/h"
+            )
+        except Exception as e:
+            return f"Weather error: {e}"
+
+
 class WebSearchTool(BaseTool):
     name = "web_search"
     description = "Search the web for current information. Input: query (string)"
@@ -112,7 +180,7 @@ class WebSearchTool(BaseTool):
         return "No search results found."
 
 
-TOOLS = [CalculatorTool(), WebSearchTool()]
+TOOLS = [CalculatorTool(), WeatherTool(), WebSearchTool()]
 
 SYSTEM_PROMPT = """You are a helpful AI assistant with access to tools. Follow the ReAct format.
 
@@ -121,6 +189,7 @@ Respond ONLY with valid JSON (no markdown, no code fences, no extra text).
 EXAMPLES:
 For calculation: {{"thought": "I need to calculate this", "tool": "calculator", "tool_input": {{"expression": "15 * 7 + 3"}}}}
 For web search: {{"thought": "I need to look this up", "tool": "web_search", "tool_input": {{"query": "population of Tokyo"}}}}
+For weather: {{"thought": "I need to check the weather", "tool": "get_weather", "tool_input": {{"location": "Tokyo"}}}}
 When done: {{"thought": "Final answer here", "tool": null, "tool_input": null}}
 
 Available tools:
@@ -283,7 +352,7 @@ with gr.Blocks(
     gr.Markdown(
         "# 🤖 Gen AI Agent Demo\n"
         "### Multi-Provider ReAct Agent powered by **Cerebras** & **NVIDIA**\n\n"
-        "The agent uses tools (calculator, web search) to reason step-by-step and answer your questions."
+        "The agent uses tools (calculator, weather, web search) to reason step-by-step and answer your questions."
     )
 
     with gr.Row():
