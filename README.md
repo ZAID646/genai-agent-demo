@@ -1,8 +1,13 @@
+---
+sdk: gradio
+sdk_version: 5.36.2
+python_version: "3.10"
+app_file: app.py
+---
+
 # Gen AI Agent Demo
 
-A **ReAct** (Reasoning + Acting) agent with dynamic tool use, powered by multi-provider LLM backends. Deployed as a Gradio web app on Hugging Face Spaces.
-
-**[→ Live Demo](https://zaid646-genai-agent-demo.hf.space)**
+A **ReAct** (Reasoning + Acting) agent with dynamic tool use, powered by multi-provider LLM backends. Try it live: [zaid646/genai-agent-demo](https://huggingface.co/spaces/zaid646/genai-agent-demo)
 
 ---
 
@@ -42,32 +47,6 @@ python app.py
 
 ---
 
-## Deploy on Hugging Face Spaces
-
-1. Create a [new Space](https://huggingface.co/new-space) with Gradio SDK
-2. Connect this repo or push directly
-3. Add all 4 secrets above in **Settings → Repository Secrets**
-4. The app auto-deploys on push
-
----
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
----
-
-## YAML for HuggingFace
-
-```yaml
-title: Gen AI Agent Demo
-emoji: 🤖
-colorFrom: blue
-colorTo: green
-sdk: gradio
-sdk_version: 5.36.2
-python_version: "3.10"
-app_file: app.py
-pinned: false
-license: mit
-```
