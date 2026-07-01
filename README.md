@@ -13,20 +13,57 @@ license: mit
 
 # Gen AI Agent Demo
 
-Multi-provider ReAct agent with tool use. Switch between **Cerebras** and **NVIDIA** backends.
+A **ReAct** (Reasoning + Acting) agent with dynamic tool use, powered by multi-provider LLM backends. Deployed as a Gradio web app on Hugging Face Spaces.
 
-## Features
+**[→ Live Demo](https://zaid646-genai-agent-demo.hf.space)**
 
-- ReAct reasoning loop (Thought → Action → Observation)
-- Tools: calculator, web search
-- Provider toggle between Cerebras (`gpt-oss-120b`) and NVIDIA (`minimaxai/minimax-m3`)
-- Step-by-step reasoning visible to user
+---
 
-## Setting up API Keys
+## Overview
 
-Add these secrets in your Space settings:
+The agent follows a Thought → Action → Observation loop, selecting tools autonomously to answer user queries step by step. Each reasoning step is streamed to the UI for full transparency.
 
-| Secret | Value |
+**Default provider:** NVIDIA (`minimaxai/minimax-m3`)
+
+### Tools
+
+| Tool | Description | Source |
+|---|---|---|
+| `calculator` | Evaluates mathematical expressions | Built-in `eval()` with sandboxed globals |
+| `get_weather` | Live weather for any city | [Open-Meteo](https://open-meteo.com/) (free, no API key) |
+| `web_search` | General web search | [Google Custom Search API](https://programmablesearchengine.google.com/) |
+
+---
+
+## Running Locally
+
+```bash
+git clone https://github.com/zaid646/genai-agent-demo.git
+cd genai-agent-demo
+pip install -r requirements.txt
+python app.py
+```
+
+### Required Environment Variables
+
+| Variable | Description |
 |---|---|
-| `CEREBRAS_API_KEY` | Your Cerebras API key |
-| `NVIDIA_API_KEY` | Your NVIDIA API key |
+| `CEREBRAS_API_KEY` | Cerebras API key (for Cerebras provider) |
+| `NVIDIA_API_KEY` | NVIDIA API key (for NVIDIA provider) |
+| `GOOGLE_API_KEY` | Google Custom Search API key |
+| `GOOGLE_CX` | Google Programmable Search Engine ID |
+
+---
+
+## Deploy on Hugging Face Spaces
+
+1. Create a [new Space](https://huggingface.co/new-space) with Gradio SDK
+2. Connect this repo or push directly
+3. Add all 4 secrets above in **Settings → Repository Secrets**
+4. The app auto-deploys on push
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
