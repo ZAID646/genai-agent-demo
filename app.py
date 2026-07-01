@@ -17,7 +17,6 @@ PROVIDERS = {
 }
 
 DEFAULT_PROVIDER = "NVIDIA"
-}
 
 TOOLS = []
 
