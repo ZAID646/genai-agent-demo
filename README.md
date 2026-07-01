@@ -1,16 +1,3 @@
----
-title: Gen AI Agent Demo
-emoji: 🤖
-colorFrom: blue
-colorTo: green
-sdk: gradio
-sdk_version: 5.36.2
-python_version: "3.10"
-app_file: app.py
-pinned: false
-license: mit
----
-
 # Gen AI Agent Demo
 
 A **ReAct** (Reasoning + Acting) agent with dynamic tool use, powered by multi-provider LLM backends. Deployed as a Gradio web app on Hugging Face Spaces.
@@ -67,3 +54,20 @@ python app.py
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+## YAML for HuggingFace
+
+```yaml
+title: Gen AI Agent Demo
+emoji: 🤖
+colorFrom: blue
+colorTo: green
+sdk: gradio
+sdk_version: 5.36.2
+python_version: "3.10"
+app_file: app.py
+pinned: false
+license: mit
+```
