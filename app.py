@@ -46,22 +46,29 @@ class WebSearchTool(BaseTool):
     description = "Search the web for current information. Input: query (string)"
     parameters = {"query": "search query"}
 
-    def run(self, query: str = "") -> str:
+    def run(self, query: str = "", q: str = "") -> str:
         import httpx
+        import re
+        search_term = query or q
+        if not search_term:
+            return "No search query provided."
         try:
             resp = httpx.get(
-                "https://api.duckduckgo.com",
-                params={"q": query, "format": "json", "no_html": 1, "skip_disambig": 1},
-                timeout=10,
+                "https://html.duckduckgo.com/html/",
+                params={"q": search_term},
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                timeout=15,
             )
-            data = resp.json()
-            abstract = data.get("AbstractText", "")
-            if abstract:
-                return abstract[:2000]
-            topics = data.get("RelatedTopics", [])
-            for topic in topics[:3]:
-                if isinstance(topic, dict) and "Text" in topic:
-                    return topic["Text"][:2000]
+            snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', resp.text, re.DOTALL)
+            if not snippets:
+                snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</', resp.text, re.DOTALL)
+            if snippets:
+                clean_snippets = []
+                for s in snippets[:3]:
+                    clean = re.sub(r'<[^>]+>', '', s).strip()
+                    clean = clean.replace('&#x27;', "'").replace('&amp;', '&').replace('&quot;', '"').replace('&lt;', '<').replace('&gt;', '>')
+                    clean_snippets.append(clean)
+                return "\n\n".join(clean_snippets)[:2000]
             return "No web results found."
         except Exception as e:
             return f"Search error: {e}"
@@ -71,19 +78,17 @@ TOOLS = [CalculatorTool(), WebSearchTool()]
 
 SYSTEM_PROMPT = """You are a helpful AI assistant with access to tools. Follow the ReAct format.
 
-For each step, respond with ONLY valid JSON (no markdown, no code fences):
+Respond ONLY with valid JSON (no markdown, no code fences, no extra text).
 
-{{
-  "thought": "your step-by-step reasoning",
-  "tool": "tool_name" or null if you have the final answer,
-  "tool_input": {{"param": "value"}} or null
-}}
+EXAMPLES:
+For calculation: {{"thought": "I need to calculate this", "tool": "calculator", "tool_input": {{"expression": "15 * 7 + 3"}}}}
+For web search: {{"thought": "I need to look this up", "tool": "web_search", "tool_input": {{"query": "population of Tokyo"}}}}
+When done: {{"thought": "Final answer here", "tool": null, "tool_input": null}}
 
 Available tools:
 {}
 
-When you have enough information, set "tool" to null and provide the final answer in "thought".
-CRITICAL: Respond with ONLY valid JSON, nothing else."""
+CRITICAL: Respond with ONLY valid JSON. No markdown. No explanations."""
 
 
 def extract_json(text: str) -> dict:
