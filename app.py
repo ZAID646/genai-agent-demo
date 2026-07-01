@@ -50,12 +50,40 @@ class WebSearchTool(BaseTool):
 
     def run(self, query: str = "", q: str = "") -> str:
         import httpx
+        import os
         import re
         search_term = query or q
         if not search_term:
             return "No search query provided."
 
-        # Try Wikipedia API first (fast, free, reliable)
+        google_key = os.environ.get("GOOGLE_API_KEY", "")
+        google_cx = os.environ.get("GOOGLE_CX", "")
+
+        if google_key and google_cx:
+            try:
+                resp = httpx.get(
+                    "https://www.googleapis.com/customsearch/v1",
+                    params={
+                        "key": google_key,
+                        "cx": google_cx,
+                        "q": search_term,
+                        "num": 5,
+                    },
+                    timeout=15,
+                )
+                data = resp.json()
+                items = data.get("items", [])
+                if items:
+                    results = []
+                    for item in items:
+                        title = item.get("title", "")
+                        snippet = item.get("snippet", "")
+                        results.append(f"{title}: {snippet}")
+                    return "\n\n".join(results)[:3000]
+            except Exception as e:
+                pass
+
+        # Fallback to Wikipedia
         try:
             resp = httpx.get(
                 "https://en.wikipedia.org/w/api.php",
@@ -81,28 +109,7 @@ class WebSearchTool(BaseTool):
         except Exception:
             pass
 
-        # Fallback to DuckDuckGo HTML search
-        try:
-            resp = httpx.get(
-                "https://html.duckduckgo.com/html/",
-                params={"q": search_term},
-                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
-                timeout=20,
-            )
-            snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', resp.text, re.DOTALL)
-            if not snippets:
-                snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</', resp.text, re.DOTALL)
-            if snippets:
-                clean_snippets = []
-                for s in snippets[:3]:
-                    clean = re.sub(r'<[^>]+>', '', s).strip()
-                    for old, new in [('&#x27;', "'"), ('&amp;', '&'), ('&quot;', '"'), ('&lt;', '<'), ('&gt;', '>')]:
-                        clean = clean.replace(old, new)
-                    clean_snippets.append(clean)
-                return "\n\n".join(clean_snippets)[:2000]
-            return "No web results found."
-        except Exception as e:
-            return f"Search error: {e}"
+        return "No search results found."
 
 
 TOOLS = [CalculatorTool(), WebSearchTool()]
