@@ -52,12 +52,40 @@ class WebSearchTool(BaseTool):
         search_term = query or q
         if not search_term:
             return "No search query provided."
+
+        # Try Wikipedia API first (fast, free, reliable)
+        try:
+            resp = httpx.get(
+                "https://en.wikipedia.org/w/api.php",
+                params={
+                    "action": "query",
+                    "list": "search",
+                    "srsearch": search_term,
+                    "format": "json",
+                    "srlimit": 3,
+                },
+                headers={"User-Agent": "GenAIAgentDemo/1.0"},
+                timeout=10,
+            )
+            data = resp.json()
+            pages = data.get("query", {}).get("search", [])
+            if pages:
+                results = []
+                for p in pages:
+                    title = p.get("title", "")
+                    snippet = re.sub(r'<[^>]+>', '', p.get("snippet", "")).strip()
+                    results.append(f"{title}: {snippet}")
+                return "\n\n".join(results)[:2000]
+        except Exception:
+            pass
+
+        # Fallback to DuckDuckGo HTML search
         try:
             resp = httpx.get(
                 "https://html.duckduckgo.com/html/",
                 params={"q": search_term},
                 headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
-                timeout=15,
+                timeout=20,
             )
             snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', resp.text, re.DOTALL)
             if not snippets:
@@ -66,7 +94,8 @@ class WebSearchTool(BaseTool):
                 clean_snippets = []
                 for s in snippets[:3]:
                     clean = re.sub(r'<[^>]+>', '', s).strip()
-                    clean = clean.replace('&#x27;', "'").replace('&amp;', '&').replace('&quot;', '"').replace('&lt;', '<').replace('&gt;', '>')
+                    for old, new in [('&#x27;', "'"), ('&amp;', '&'), ('&quot;', '"'), ('&lt;', '<'), ('&gt;', '>')]:
+                        clean = clean.replace(old, new)
                     clean_snippets.append(clean)
                 return "\n\n".join(clean_snippets)[:2000]
             return "No web results found."
